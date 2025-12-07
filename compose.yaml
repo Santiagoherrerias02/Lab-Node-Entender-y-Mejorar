@@ -7,16 +7,19 @@ services:
     working_dir: /app
     volumes:
       - ./:/app
+    restart: always
+    env_file: .env
     environment:
-      MYSQL_HOST: mysql
-      MYSQL_USER: root
-      MYSQL_PASSWORD: secret
-      MYSQL_DB: lab
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: secret
+      DB_NAME: lab
 
   mysql:
     image: mysql:8.0
     volumes:
       - mysql_data:/var/lib/mysql
+    env_file: .env
     environment:
       MYSQL_ROOT_PASSWORD: secret
       MYSQL_DATABASE: lab
