@@ -22,7 +22,8 @@ const User = sequelize.define('User', {
   username: {
     type: DataTypes.STRING,
     allowNull: true,
-    defaultValue: 'Usuario'
+    unique: true,
+    defaultValue: () => `Usuario_${Math.floor(Math.random() * 100000)}`
   },
   avatar: {
     type: DataTypes.TEXT,
