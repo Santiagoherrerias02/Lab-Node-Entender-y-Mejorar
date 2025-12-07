@@ -8,7 +8,7 @@ export const UserController = {
     const { email, password } = req.body;
     try {
       const user = await registerUser(email, password);
-      console.log("Usuario registrado exitosamente:", user.id);
+      // console.log("Usuario registrado exitosamente:", user.id);
       res.status(201).json({ 
         message: 'Usuario registrado con éxito',
         userId: user.id 
@@ -30,7 +30,7 @@ export const UserController = {
       });
       // Decodificar el token para obtener el userId
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log('--------token decoded ----------', decoded)
+      // console.log('--------token decoded ----------', decoded)
       
       res.json({ 
         message: 'Login exitoso',

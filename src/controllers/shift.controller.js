@@ -15,16 +15,16 @@ export const createShift = async (req, res) => {
         id_usuario : userId
       }
     })
-    console.log('Turno con ID del usuario: ', userId)
-    console.log('Existe turno?', shift)
+    // console.log('Turno con ID del usuario: ', userId)
+    // console.log('Existe turno?', shift)
 
     if (shift) {
-      console.log('UPS YA HAY UN TURNO')
+      // console.log('UPS YA HAY UN TURNO')
       return res.status(400).json({ message: 'Ya hay un turno pendiente o aceptado para tu usuario' })
     }
 
     socketList.set(userId, socketId);
-    console.log('socketList', socketList);
+    // console.log('socketList', socketList);
 
     const socket = io.sockets.sockets.get(socketId);
     if (!socket) {
