@@ -66,6 +66,22 @@
         padding: 2rem 0;
         margin-top: auto;
     }
+
+    .avatar-small {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-right: 8px;
+    }
+
+    .avatar-large {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #0d6efd;
+    }
   </style>
 </head>
 
@@ -79,15 +95,32 @@
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item">
+        <ul class="navbar-nav ms-auto align-items-center">
+          <!-- Public Links -->
+          <li class="nav-item public-link">
             <a class="nav-link" href="#" onclick="showSection('login-section')">Login</a>
           </li>
-          <li class="nav-item">
+          <li class="nav-item public-link">
             <a class="nav-link" href="#" onclick="showSection('register-section')">Registro</a>
           </li>
-          <li class="nav-item">
+          <li class="nav-item public-link">
             <a class="nav-link" href="#about">Sobre el Proyecto</a>
+          </li>
+
+          <!-- Private Links (Auth) -->
+          <li class="nav-item private-link hidden">
+             <a class="nav-link" href="#" onclick="showSection('dashboard-section')">Panel</a>
+          </li>
+          <li class="nav-item private-link hidden dropdown">
+             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
+                 <img src="https://via.placeholder.com/30" id="navAvatar" class="avatar-small" alt="Avatar">
+                 <span id="navUsername">Usuario</span>
+             </a>
+             <ul class="dropdown-menu dropdown-menu-end">
+                 <li><a class="dropdown-item" href="#" onclick="loadProfile()">Mi Perfil</a></li>
+                 <li><hr class="dropdown-divider"></li>
+                 <li><a class="dropdown-item text-danger" href="#" onclick="logout()">Cerrar Sesión</a></li>
+             </ul>
           </li>
         </ul>
       </div>
@@ -153,6 +186,38 @@
       </div>
     </div>
 
+    <!-- Profile Section -->
+    <div id="profile-section" class="col-md-6 hidden">
+      <div class="card">
+        <div class="card-header bg-info text-white">
+          <h3 class="mb-0">Mi Perfil</h3>
+        </div>
+        <div class="card-body p-4 text-center">
+             <div class="mb-4">
+                 <img src="https://via.placeholder.com/150" id="profileAvatarDisplay" class="avatar-large mb-3" alt="Profile">
+                 <h4 id="profileEmailDisplay" class="text-muted">cargando...</h4>
+             </div>
+
+             <form id="profileForm">
+                 <div class="mb-3 text-start">
+                     <label for="profileUsername" class="form-label">Nombre de Usuario (Alias)</label>
+                     <input type="text" class="form-control" id="profileUsername" required>
+                 </div>
+                 <div class="mb-3 text-start">
+                     <label for="profileAvatarUrl" class="form-label">URL de Avatar (Imagen)</label>
+                     <input type="url" class="form-control" id="profileAvatarUrl" placeholder="https://ejemplo.com/foto.jpg">
+                     <div class="form-text">Pega un enlace directo a una imagen.</div>
+                 </div>
+                 <div class="d-grid">
+                     <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                 </div>
+             </form>
+             <div id="profileMessage" class="mt-3"></div>
+        </div>
+      </div>
+    </div>
+
+
     <!-- Dashboard Section (Hidden by default) -->
     <div id="dashboard-section" class="col-md-8 hidden">
       <div class="card">
@@ -160,7 +225,7 @@
           <h3 class="mb-0">Panel de Control</h3>
         </div>
         <div class="card-body text-center p-5">
-            <h4 class="mb-4">Bienvenido al Laboratorio Remoto</h4>
+            <h4 class="mb-4">Bienvenido, <span id="dashUsername">Usuario</span></h4>
 
             <div id="crearturno" style="display: none;">
                 <p class="lead">Estás listo para solicitar acceso al experimento.</p>
@@ -214,18 +279,35 @@
   <script>
     // --- UI Logic ---
     function showSection(sectionId) {
-        document.getElementById('login-section').classList.add('hidden');
-        document.getElementById('register-section').classList.add('hidden');
-        document.getElementById('dashboard-section').classList.add('hidden');
+        // Hide all main sections
+        const sections = ['login-section', 'register-section', 'dashboard-section', 'profile-section'];
+        sections.forEach(id => document.getElementById(id).classList.add('hidden'));
+
+        // Show target
         document.getElementById(sectionId).classList.remove('hidden');
+    }
+
+    function updateAuthUI(isLoggedIn) {
+        const publicLinks = document.querySelectorAll('.public-link');
+        const privateLinks = document.querySelectorAll('.private-link');
+
+        if (isLoggedIn) {
+            publicLinks.forEach(el => el.classList.add('hidden'));
+            privateLinks.forEach(el => el.classList.remove('hidden'));
+        } else {
+            publicLinks.forEach(el => el.classList.remove('hidden'));
+            privateLinks.forEach(el => el.classList.add('hidden'));
+        }
     }
 
     // --- App Logic ---
     const loginForm = document.getElementById('loginForm');
     const registerForm = document.getElementById('registerForm');
+    const profileForm = document.getElementById('profileForm');
 
     const messageDiv = document.getElementById('message');
     const regMessageDiv = document.getElementById('reg-message');
+    const profileMessageDiv = document.getElementById('profileMessage');
     const socketStatusDiv = document.getElementById('socketStatus');
 
     const submitButton = document.getElementById('submitButton');
@@ -301,10 +383,14 @@
         if (response.ok) {
           if (result.userId) {
             userId = result.userId;
+            // Fetch latest profile data to update UI
+            await fetchProfileData(userId);
+
             // Switch to Dashboard
+            updateAuthUI(true);
             showSection('dashboard-section');
             crearTurnoDiv.style.display = 'block';
-            crearTurnoBtn.textContent = `Solicitar Turno (Usuario: ${userId})`;
+            crearTurnoBtn.textContent = `Solicitar Turno`;
           }
         } else {
           messageDiv.textContent = result.message || 'Error en credenciales.';
@@ -381,8 +467,93 @@
       }
     });
 
+    // 5. Logout Logic
+    async function logout() {
+        if(!confirm('¿Seguro que quieres cerrar sesión? Si estás en la cola, perderás tu lugar.')) return;
+
+        try {
+            await fetch('http://localhost:3000/auth/logout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: userId }) // Send userId for queue cleanup
+            });
+
+            userId = null;
+            updateAuthUI(false);
+            showSection('login-section');
+            loginForm.reset();
+            crearTurnoBtn.disabled = false;
+            startDiv.style.display = 'none';
+            expDataDiv.style.display = 'none';
+
+        } catch(e) {
+            console.error(e);
+        }
+    }
+
+    // 6. Profile Logic
+    async function loadProfile() {
+        showSection('profile-section');
+    }
+
+    async function fetchProfileData(id) {
+        try {
+            const res = await fetch(`http://localhost:3000/auth/profile/${id}`);
+            if(res.ok) {
+                const user = await res.json();
+
+                // Update Global UI
+                document.getElementById('navUsername').textContent = user.username || 'Usuario';
+                document.getElementById('dashUsername').textContent = user.username || 'Usuario';
+                document.getElementById('navAvatar').src = user.avatar || 'https://via.placeholder.com/30';
+
+                // Update Profile Form
+                document.getElementById('profileEmailDisplay').textContent = user.email;
+                document.getElementById('profileAvatarDisplay').src = user.avatar || 'https://via.placeholder.com/150';
+                document.getElementById('profileUsername').value = user.username || '';
+                document.getElementById('profileAvatarUrl').value = user.avatar || '';
+            }
+        } catch(e) {
+            console.error("Error fetching profile", e);
+        }
+    }
+
+    profileForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        profileMessageDiv.textContent = 'Guardando...';
+
+        const updateData = {
+            username: document.getElementById('profileUsername').value,
+            avatar: document.getElementById('profileAvatarUrl').value
+        };
+
+        try {
+            const res = await fetch(`http://localhost:3000/auth/profile/${userId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updateData)
+            });
+
+            if(res.ok) {
+                const result = await res.json();
+                profileMessageDiv.className = 'mt-3 text-success';
+                profileMessageDiv.textContent = '¡Perfil actualizado correctamente!';
+
+                // Refresh UI
+                await fetchProfileData(userId);
+            } else {
+                profileMessageDiv.className = 'mt-3 text-danger';
+                profileMessageDiv.textContent = 'Error al actualizar perfil.';
+            }
+        } catch(e) {
+             profileMessageDiv.className = 'mt-3 text-danger';
+             profileMessageDiv.textContent = 'Error de conexión.';
+        }
+    });
+
     // Initial State
     submitButton.disabled = true;
+    updateAuthUI(false);
   </script>
 </body>
 </html>
