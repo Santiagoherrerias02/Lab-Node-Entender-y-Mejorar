@@ -25,7 +25,7 @@ const User = sequelize.define('User', {
     defaultValue: 'Usuario'
   },
   avatar: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true,
     defaultValue: 'https://via.placeholder.com/150'
   },
