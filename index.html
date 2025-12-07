@@ -596,6 +596,12 @@
 
                 // Switch to Onboarding
                 updateAuthUI(true); // Show private links
+
+                // Clean onboarding form before showing
+                onboardingForm.reset();
+                document.getElementById('onboardingUsernameDisplay').textContent = 'Usuario';
+                document.getElementById('onboardingAvatarDisplay').src = 'https://via.placeholder.com/150';
+
                 showSection('onboarding-section');
                 registerForm.reset();
 
@@ -705,6 +711,11 @@
             updateAuthUI(false);
             showSection('login-section');
             loginForm.reset();
+            // Ensure other forms are cleared to prevent leaking data
+            registerForm.reset();
+            onboardingForm.reset();
+            profileForm.reset();
+
             crearTurnoBtn.disabled = false;
             startDiv.style.display = 'none';
             expDataDiv.style.display = 'none';
