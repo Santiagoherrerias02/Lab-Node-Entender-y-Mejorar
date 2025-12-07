@@ -328,6 +328,15 @@
                  </div>
              </form>
              <div id="profileMessage" class="mt-3 text-center"></div>
+
+             <hr class="my-5">
+
+             <div class="text-center">
+                 <h5 class="text-danger mb-3">Zona de Peligro</h5>
+                 <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                     <i class="bi bi-trash"></i> Eliminar mi cuenta
+                 </button>
+             </div>
         </div>
       </div>
     </div>
@@ -428,6 +437,27 @@
                 <button type="submit" class="btn btn-primary">Actualizar Contraseña</button>
             </div>
           </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Account Modal -->
+  <div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title">Eliminar Cuenta</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+          <p class="lead">¿Estás seguro de que deseas eliminar tu cuenta?</p>
+          <p class="text-muted small">Esta acción no se puede deshacer. Se perderá todo tu historial y configuración.</p>
+          <div id="deleteMessage" class="mb-3"></div>
+          <div class="d-flex justify-content-center gap-3 mt-4">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" id="confirmDeleteBtn" class="btn btn-danger">Sí, eliminar cuenta</button>
+          </div>
         </div>
       </div>
     </div>
@@ -697,8 +727,8 @@
     });
 
     // 5. Logout Logic
-    async function logout() {
-        if(!confirm('¿Seguro que quieres cerrar sesión?')) return;
+    async function logout(skipConfirm = false) {
+        if(!skipConfirm && !confirm('¿Seguro que quieres cerrar sesión?')) return;
 
         try {
             await fetch('http://localhost:3000/auth/logout', {
@@ -710,11 +740,28 @@
             userId = null;
             updateAuthUI(false);
             showSection('login-section');
+
+            // Forms Reset
             loginForm.reset();
-            // Ensure other forms are cleared to prevent leaking data
             registerForm.reset();
             onboardingForm.reset();
             profileForm.reset();
+
+            // UI Elements Reset (Fix Ghost Data)
+            const defaultAvatar = 'https://via.placeholder.com/30';
+            const defaultLargeAvatar = 'https://via.placeholder.com/150';
+            const defaultUser = 'Usuario';
+
+            document.getElementById('navUsername').textContent = defaultUser;
+            document.getElementById('navAvatar').src = defaultAvatar;
+            document.getElementById('dashUsername').textContent = defaultUser;
+
+            document.getElementById('profileUsernameDisplay').textContent = defaultUser;
+            document.getElementById('profileEmailDisplay').textContent = 'cargando...';
+            document.getElementById('profileAvatarDisplay').src = defaultLargeAvatar;
+
+            document.getElementById('onboardingUsernameDisplay').textContent = defaultUser;
+            document.getElementById('onboardingAvatarDisplay').src = defaultLargeAvatar;
 
             crearTurnoBtn.disabled = false;
             startDiv.style.display = 'none';
@@ -724,6 +771,42 @@
             console.error(e);
         }
     }
+
+    // 5b. Delete Account Logic
+    document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+        const deleteMsg = document.getElementById('deleteMessage');
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+
+        deleteMsg.textContent = 'Procesando...';
+        confirmBtn.disabled = true;
+
+        try {
+            const res = await fetch('http://localhost:3000/auth/delete', {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                // Close modal
+                const modalEl = document.getElementById('deleteAccountModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                modal.hide();
+
+                // Logout immediately (skip confirm)
+                await logout(true);
+
+                alert('Tu cuenta ha sido eliminada.');
+            } else {
+                const result = await res.json();
+                deleteMsg.textContent = result.message || 'Error al eliminar cuenta.';
+                deleteMsg.className = 'text-danger mb-3';
+                confirmBtn.disabled = false;
+            }
+        } catch (e) {
+            deleteMsg.textContent = 'Error de conexión.';
+            deleteMsg.className = 'text-danger mb-3';
+            confirmBtn.disabled = false;
+        }
+    });
 
     // 6. Profile Logic
     async function loadProfile() {

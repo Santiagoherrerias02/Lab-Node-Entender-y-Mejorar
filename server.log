@@ -1,0 +1,7 @@
+
+> mi-api@1.0.0 start
+> node src/server.js
+
+✅ Conexión a la base de datos establecida correctamente.
+✅ Modelos sincronizados con la base de datos.
+Servidor corriendo en http://localhost:3000
