@@ -11,7 +11,15 @@ export const UserController = {
     const { email, password } = req.body;
     try {
       const user = await registerUser(email, password);
-      // console.log("Usuario registrado exitosamente:", user.id);
+
+      // Auto-login para onboarding
+      const token = await loginUser(email, password);
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: false,
+        maxAge: 24 * 60 * 60 * 1000,
+      });
+
       res.status(201).json({ 
         message: 'Usuario registrado con éxito',
         userId: user.id 
@@ -85,6 +93,9 @@ export const UserController = {
 
           res.json({ message: 'Perfil actualizado', user: { id: user.id, username: user.username, avatar: user.avatar } });
       } catch (error) {
+          if (error.name === 'SequelizeUniqueConstraintError') {
+              return res.status(400).json({ message: 'El nombre de usuario ya está en uso. Elige otro.' });
+          }
           res.status(500).json({ error: error.message });
       }
   },

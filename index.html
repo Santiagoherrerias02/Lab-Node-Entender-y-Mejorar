@@ -5,8 +5,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Laboratorio Remoto</title>
+  <!-- Favicon -->
+  <link rel="icon" href="https://img.icons8.com/color/48/microscope.png" type="image/png">
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <style>
     :root {
       --primary-color: #2c3e50; /* Dark Blue */
@@ -247,11 +251,47 @@
       </div>
     </div>
 
+    <!-- Onboarding Section (New) -->
+    <div id="onboarding-section" class="col-md-6 hidden">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h3 class="mb-0">¡Bienvenido! 🎉</h3>
+            </div>
+            <div class="card-body p-4 text-center">
+                <p class="lead mb-4">Tu cuenta ha sido creada. Personaliza tu perfil para empezar.</p>
+
+                <form id="onboardingForm">
+                    <div class="mb-4">
+                        <img src="https://via.placeholder.com/150" id="onboardingAvatarDisplay" class="avatar-large mb-3" alt="Avatar">
+                        <h4 id="onboardingUsernameDisplay" class="fw-bold">Usuario</h4>
+                    </div>
+
+                    <div class="mb-3 text-start">
+                        <label for="onboardingUsername" class="form-label">Nombre de Usuario (Único)</label>
+                        <input type="text" class="form-control" id="onboardingUsername" placeholder="Ej: Cientifico2024">
+                    </div>
+
+                    <div class="mb-4 text-start">
+                        <label for="onboardingAvatar" class="form-label">URL de Avatar</label>
+                        <input type="url" class="form-control" id="onboardingAvatar" placeholder="https://ejemplo.com/foto.jpg">
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">Guardar y Continuar</button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="skipOnboarding()">Omitir por ahora</button>
+                    </div>
+                    <div id="onboardingMessage" class="mt-3 text-danger"></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Profile Section -->
     <div id="profile-section" class="col-md-6 hidden">
       <div class="card">
-        <div class="card-header bg-info text-white">
-          <h3 class="mb-0">Mi Perfil</h3>
+        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+          <h3 class="mb-0 mx-auto">Mi Perfil</h3>
+          <button class="btn btn-light btn-sm" id="editProfileBtn" title="Editar Perfil"><i class="bi bi-pencil-fill"></i></button>
         </div>
         <div class="card-body p-4">
              <div class="text-center mb-4">
@@ -263,15 +303,17 @@
              <hr class="my-4">
 
              <form id="profileForm">
-                 <div class="mb-3">
-                     <label for="profileUsername" class="form-label fw-bold">Nombre de Usuario</label>
-                     <input type="text" class="form-control" id="profileUsername" required>
-                 </div>
+                 <fieldset id="profileFieldset" disabled>
+                     <div class="mb-3">
+                         <label for="profileUsername" class="form-label fw-bold">Nombre de Usuario</label>
+                         <input type="text" class="form-control" id="profileUsername" required>
+                     </div>
 
-                 <div class="mb-3">
-                     <label for="profileAvatarUrl" class="form-label fw-bold">URL de Avatar</label>
-                     <input type="url" class="form-control" id="profileAvatarUrl" placeholder="https://ejemplo.com/foto.jpg">
-                 </div>
+                     <div class="mb-3">
+                         <label for="profileAvatarUrl" class="form-label fw-bold">URL de Avatar</label>
+                         <input type="url" class="form-control" id="profileAvatarUrl" placeholder="https://ejemplo.com/foto.jpg">
+                     </div>
+                 </fieldset>
 
                  <div class="mb-4">
                     <label class="form-label fw-bold">Contraseña</label>
@@ -282,7 +324,7 @@
                  </div>
 
                  <div class="d-grid">
-                     <button type="submit" class="btn btn-primary">Guardar Cambios de Perfil</button>
+                     <button type="submit" id="saveProfileBtn" class="btn btn-primary" disabled>Guardar Cambios de Perfil</button>
                  </div>
              </form>
              <div id="profileMessage" class="mt-3 text-center"></div>
@@ -398,14 +440,11 @@
     // --- UI Logic ---
     function showSection(sectionId) {
         // Hide all main sections
-        const sections = ['login-section', 'register-section', 'dashboard-section', 'profile-section'];
+        const sections = ['login-section', 'register-section', 'dashboard-section', 'profile-section', 'onboarding-section'];
         sections.forEach(id => document.getElementById(id).classList.add('hidden'));
 
         // Show target
         document.getElementById(sectionId).classList.remove('hidden');
-
-        // Hide About Us if showing a specific app section to focus user attention (Optional, keeping it visible for now as requested "separated")
-        // document.getElementById('about-us-section').style.display = (sectionId === 'dashboard-section' || sectionId === 'profile-section') ? 'none' : 'block';
     }
 
     function reloadApp() {
@@ -434,11 +473,13 @@
     const registerForm = document.getElementById('registerForm');
     const profileForm = document.getElementById('profileForm');
     const changePasswordForm = document.getElementById('changePasswordForm');
+    const onboardingForm = document.getElementById('onboardingForm');
 
     const messageDiv = document.getElementById('message');
     const regMessageDiv = document.getElementById('reg-message');
     const profileMessageDiv = document.getElementById('profileMessage');
     const passwordMessageDiv = document.getElementById('passwordMessage');
+    const onboardingMessageDiv = document.getElementById('onboardingMessage');
     const socketStatusDiv = document.getElementById('socketStatus');
 
     const submitButton = document.getElementById('submitButton');
@@ -530,7 +571,7 @@
       }
     });
 
-    // 3. Register Handler
+    // 3. Register Handler (Updated for Onboarding)
     registerForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         regMessageDiv.textContent = '';
@@ -550,11 +591,14 @@
             const result = await response.json();
 
             if (response.ok) {
-                regMessageDiv.classList.add('text-success');
-                regMessageDiv.classList.remove('text-danger');
-                regMessageDiv.textContent = '¡Registro exitoso! Redirigiendo...';
+                // Success! Auto-login is handled by cookie in backend
+                userId = result.userId;
+
+                // Switch to Onboarding
+                updateAuthUI(true); // Show private links
+                showSection('onboarding-section');
                 registerForm.reset();
-                setTimeout(() => showSection('login-section'), 2000);
+
             } else {
                 regMessageDiv.classList.add('text-danger');
                 regMessageDiv.classList.remove('text-success');
@@ -564,6 +608,56 @@
             regMessageDiv.textContent = 'Error de conexión.';
         }
     });
+
+    // 3b. Onboarding Logic
+    // Reactivity for Onboarding
+    const onboardUserIn = document.getElementById('onboardingUsername');
+    const onboardAvatarIn = document.getElementById('onboardingAvatar');
+
+    onboardUserIn.addEventListener('input', (e) => {
+        document.getElementById('onboardingUsernameDisplay').textContent = e.target.value || 'Usuario';
+    });
+    onboardAvatarIn.addEventListener('input', (e) => {
+        document.getElementById('onboardingAvatarDisplay').src = e.target.value || 'https://via.placeholder.com/150';
+    });
+
+    onboardingForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        onboardingMessageDiv.textContent = '';
+
+        const data = {
+            username: onboardUserIn.value,
+            avatar: onboardAvatarIn.value
+        };
+
+        try {
+            const res = await fetch(`http://localhost:3000/auth/profile/${userId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if(res.ok) {
+                // Success - Go to Dashboard
+                await fetchProfileData(userId);
+                showSection('dashboard-section');
+                crearTurnoDiv.style.display = 'block';
+                crearTurnoBtn.textContent = `Solicitar Turno`;
+            } else {
+                const result = await res.json();
+                onboardingMessageDiv.textContent = result.message || 'Error al guardar perfil.';
+            }
+        } catch(e) {
+            onboardingMessageDiv.textContent = 'Error de conexión.';
+        }
+    });
+
+    function skipOnboarding() {
+        showSection('dashboard-section');
+        fetchProfileData(userId); // Load default data
+        crearTurnoDiv.style.display = 'block';
+        crearTurnoBtn.textContent = `Solicitar Turno`;
+    }
 
     // 4. Experiment Logic
     startExpBtn.addEventListener('click', async () => {
@@ -622,8 +716,43 @@
 
     // 6. Profile Logic
     async function loadProfile() {
+        // Reset state
+        profileMessageDiv.textContent = '';
+        document.getElementById('profileFieldset').disabled = true;
+        document.getElementById('saveProfileBtn').disabled = true;
+
         showSection('profile-section');
     }
+
+    // Edit Button Logic
+    document.getElementById('editProfileBtn').addEventListener('click', () => {
+        const fieldset = document.getElementById('profileFieldset');
+        const saveBtn = document.getElementById('saveProfileBtn');
+        const isEnabled = !fieldset.disabled;
+
+        if (isEnabled) {
+            // Disable it (Cancel mode implies reload?)
+            fieldset.disabled = true;
+            saveBtn.disabled = true;
+            // Optionally reload data to undo changes
+            fetchProfileData(userId);
+        } else {
+            // Enable it
+            fieldset.disabled = false;
+            saveBtn.disabled = false;
+        }
+    });
+
+    // Profile Reactivity
+    const profUserIn = document.getElementById('profileUsername');
+    const profAvatarIn = document.getElementById('profileAvatarUrl');
+
+    profUserIn.addEventListener('input', (e) => {
+         document.getElementById('profileUsernameDisplay').textContent = e.target.value || 'Usuario';
+    });
+    profAvatarIn.addEventListener('input', (e) => {
+         document.getElementById('profileAvatarDisplay').src = e.target.value || 'https://via.placeholder.com/150';
+    });
 
     async function fetchProfileData(id) {
         try {
@@ -653,6 +782,7 @@
     profileForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         profileMessageDiv.textContent = 'Guardando...';
+        profileMessageDiv.className = 'mt-3 text-center text-muted';
 
         const updateData = {
             username: document.getElementById('profileUsername').value,
@@ -667,15 +797,21 @@
             });
 
             if(res.ok) {
-                profileMessageDiv.className = 'mt-3 text-success';
+                profileMessageDiv.className = 'mt-3 text-center text-success';
                 profileMessageDiv.textContent = '¡Perfil actualizado correctamente!';
+
+                // Re-disable form
+                document.getElementById('profileFieldset').disabled = true;
+                document.getElementById('saveProfileBtn').disabled = true;
+
                 await fetchProfileData(userId);
             } else {
-                profileMessageDiv.className = 'mt-3 text-danger';
-                profileMessageDiv.textContent = 'Error al actualizar perfil.';
+                const result = await res.json();
+                profileMessageDiv.className = 'mt-3 text-center text-danger';
+                profileMessageDiv.textContent = result.message || 'Error al actualizar perfil.';
             }
         } catch(e) {
-             profileMessageDiv.className = 'mt-3 text-danger';
+             profileMessageDiv.className = 'mt-3 text-center text-danger';
              profileMessageDiv.textContent = 'Error de conexión.';
         }
     });
