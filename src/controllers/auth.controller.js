@@ -150,6 +150,36 @@ export const UserController = {
       } catch (error) {
           res.status(401).json({ message: 'Token inválido o expirado' });
       }
+  },
+
+  // Eliminar cuenta
+  deleteAccount: async (req, res) => {
+    try {
+        const token = req.cookies.token;
+        if (!token) {
+            return res.status(401).json({ message: 'No autenticado' });
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const userId = decoded.userId;
+
+        // Eliminar turnos activos
+        await Shift.destroy({ where: { id_usuario: userId } });
+
+        // Eliminar usuario
+        const deleted = await User.destroy({ where: { id: userId } });
+
+        if (deleted) {
+            res.clearCookie('token');
+            res.json({ message: 'Cuenta eliminada exitosamente' });
+        } else {
+            res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+
+    } catch (error) {
+        console.error('Error al eliminar cuenta:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
   }
 }
 export default UserController;

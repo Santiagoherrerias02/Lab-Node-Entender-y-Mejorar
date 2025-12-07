@@ -11,5 +11,6 @@ router.get('/me', UserController.me);
 router.get('/profile/:id', UserController.getProfile);
 router.put('/profile/:id', UserController.updateProfile);
 router.put('/change-password', UserController.changePassword);
+router.delete('/delete', UserController.deleteAccount);
 
 export default router;
