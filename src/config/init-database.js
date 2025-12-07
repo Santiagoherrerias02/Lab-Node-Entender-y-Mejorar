@@ -10,7 +10,7 @@ export const initDatabase = async () => {
     // Sincronizar modelos con la base de datos
     // force: true - recrea las tablas (¡CUIDADO! borra datos existentes)
     // alter: true - modifica las tablas existentes
-    await sequelize.sync({ force: false, alter: false });
+    await sequelize.sync({ force: false, alter: true });
     console.log('✅ Modelos sincronizados con la base de datos.');
 
   } catch (error) {

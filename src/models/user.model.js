@@ -19,6 +19,16 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
     allowNull: false
   },
+  username: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'Usuario'
+  },
+  avatar: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'https://via.placeholder.com/150'
+  },
   created_at: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW

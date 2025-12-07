@@ -1,6 +1,8 @@
 // auth/auth.controller.js
 import { registerUser, loginUser } from '../services/auth.service.js';
+import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
+import { Shift } from '../models/index.js';
 
 export const UserController = {
   //Registrar usuario y guardarlo en la bd
@@ -41,9 +43,50 @@ export const UserController = {
     }
   },
   //Cerrar sesión
-  logout: (req, res) => {
+  logout: async (req, res) => {
+    // Si hay userId en el request (pasado por cliente o extraído de token si hubiera middleware)
+    // Intentamos limpiar turno
+    const { userId } = req.body;
+
+    if (userId) {
+        try {
+            await Shift.destroy({ where: { id_usuario: userId } });
+            // console.log(`Turnos eliminados para usuario ${userId} al hacer logout`);
+        } catch (error) {
+            console.error('Error limpiando turnos al logout:', error);
+        }
+    }
+
     res.clearCookie('token');
     res.json({ message: 'Sesión cerrada' });
+  },
+
+  // Obtener perfil
+  getProfile: async (req, res) => {
+    try {
+        const user = await User.findByPk(req.params.id, { attributes: ['id', 'email', 'username', 'avatar'] });
+        if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+  },
+
+  // Actualizar perfil
+  updateProfile: async (req, res) => {
+      try {
+          const { username, avatar } = req.body;
+          const user = await User.findByPk(req.params.id);
+          if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
+
+          user.username = username || user.username;
+          user.avatar = avatar || user.avatar;
+          await user.save();
+
+          res.json({ message: 'Perfil actualizado', user: { id: user.id, username: user.username, avatar: user.avatar } });
+      } catch (error) {
+          res.status(500).json({ error: error.message });
+      }
   }
 }
 export default UserController;
