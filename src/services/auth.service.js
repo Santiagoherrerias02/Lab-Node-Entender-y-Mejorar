@@ -14,7 +14,14 @@ export async function registerUser(email, password) {
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
-  const userCreated = await User.addUser(email, hashedPassword);
+
+  // Create user
+  // If we want to support 'role' passing or auto-admin:
+  const userCreated = await User.create({
+      email: email,
+      password: hashedPassword,
+      role: email === 'admin@labremoto.com' ? 'admin' : 'user'
+  });
 
   return userCreated;
 }

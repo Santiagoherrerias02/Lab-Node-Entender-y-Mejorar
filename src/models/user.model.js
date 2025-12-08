@@ -37,6 +37,11 @@ const User = sequelize.define('User', {
   updated_at: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
+  },
+  role: {
+    type: DataTypes.STRING,
+    defaultValue: 'user', // 'user' or 'admin'
+    allowNull: false
   }
 }, {
   tableName: 'users',
