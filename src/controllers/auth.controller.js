@@ -137,7 +137,7 @@ export const UserController = {
           }
 
           const decoded = jwt.verify(token, process.env.JWT_SECRET);
-          const user = await User.findByPk(decoded.userId, { attributes: ['id', 'email', 'username', 'avatar'] });
+          const user = await User.findByPk(decoded.userId, { attributes: ['id', 'email', 'username', 'avatar', 'role'] });
 
           if (!user) {
              return res.status(404).json({ message: 'Usuario no encontrado' });
@@ -149,6 +149,19 @@ export const UserController = {
           });
       } catch (error) {
           res.status(401).json({ message: 'Token inválido o expirado' });
+      }
+  },
+
+  // Admin: Get All Users
+  getAllUsers: async (req, res) => {
+      try {
+          const users = await User.findAll({
+              attributes: ['id', 'username', 'email', 'role', 'created_at']
+          });
+          res.json(users);
+      } catch (error) {
+          console.error(error);
+          res.status(500).json({ error: 'Error al obtener usuarios' });
       }
   },
 
