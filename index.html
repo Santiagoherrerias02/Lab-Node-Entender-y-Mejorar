@@ -652,7 +652,7 @@
             userId = result.userId;
             await fetchProfileData(userId);
 
-            updateAuthUI(true);
+            updateAuthUI(true, result.role);
             showSection('dashboard-section');
             crearTurnoDiv.style.display = 'block';
             crearTurnoBtn.textContent = `Solicitar Turno`;
@@ -690,9 +690,7 @@
                 userId = result.userId;
 
                 // Switch to Onboarding
-                // Determine role (new users are usually 'user' unless specific email)
-                const role = (document.getElementById('reg-email').value === 'admin@labremoto.com') ? 'admin' : 'user';
-                updateAuthUI(true, role);
+                updateAuthUI(true, result.role);
 
                 // Clean onboarding form before showing
                 onboardingForm.reset();
