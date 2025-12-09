@@ -42,6 +42,10 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
     defaultValue: 'user', // 'user' or 'admin'
     allowNull: false
+  },
+  reset_requested: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   }
 }, {
   tableName: 'users',

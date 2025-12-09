@@ -156,12 +156,82 @@ export const UserController = {
   getAllUsers: async (req, res) => {
       try {
           const users = await User.findAll({
-              attributes: ['id', 'username', 'email', 'role', 'created_at']
+              attributes: ['id', 'username', 'email', 'role', 'created_at', 'reset_requested']
           });
           res.json(users);
       } catch (error) {
           console.error(error);
           res.status(500).json({ error: 'Error al obtener usuarios' });
+      }
+  },
+
+  // Public: Request Password Reset
+  requestPasswordReset: async (req, res) => {
+      try {
+          const { email } = req.body;
+          const user = await User.findOne({ where: { email } });
+
+          if (!user) {
+              // Security: Do not reveal if user exists
+              return res.json({ message: 'Si el correo existe, se ha notificado al administrador.' });
+          }
+
+          user.reset_requested = true;
+          await user.save();
+
+          res.json({ message: 'Si el correo existe, se ha notificado al administrador.' });
+      } catch (error) {
+          console.error(error);
+          res.status(500).json({ error: 'Error interno del servidor' });
+      }
+  },
+
+  // Admin: Delete User
+  deleteUserByAdmin: async (req, res) => {
+      try {
+          const { id } = req.params;
+          // Prevent deleting self? Maybe.
+
+          // Cascade delete
+          await Shift.destroy({ where: { id_usuario: id } });
+          const deleted = await User.destroy({ where: { id } });
+
+          if (deleted) {
+              res.json({ message: 'Usuario eliminado' });
+          } else {
+              res.status(404).json({ message: 'Usuario no encontrado' });
+          }
+      } catch (error) {
+          console.error(error);
+          res.status(500).json({ error: 'Error al eliminar usuario' });
+      }
+  },
+
+  // Admin: Reset User Password
+  resetUserPasswordByAdmin: async (req, res) => {
+      try {
+          const { id } = req.params;
+          const { newPassword } = req.body;
+
+          const user = await User.findByPk(id);
+
+          if (!user) {
+              return res.status(404).json({ message: 'Usuario no encontrado' });
+          }
+
+          if (!user.reset_requested) {
+              return res.status(403).json({ message: 'Este usuario no ha solicitado un cambio de contraseña.' });
+          }
+
+          const hashedPassword = await bcrypt.hash(newPassword, 10);
+          user.password = hashedPassword;
+          user.reset_requested = false; // Reset flag
+          await user.save();
+
+          res.json({ message: 'Contraseña actualizada correctamente.' });
+      } catch (error) {
+          console.error(error);
+          res.status(500).json({ error: 'Error al restablecer contraseña' });
       }
   },
 
