@@ -22,7 +22,8 @@ export const UserController = {
 
       res.status(201).json({ 
         message: 'Usuario registrado con éxito',
-        userId: user.id 
+        userId: user.id,
+        role: user.role
       });
     } catch (err) {
       console.error('Error en registro:', err);
@@ -42,9 +43,13 @@ export const UserController = {
       // Decodificar el token para obtener el userId
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       
+      // Fetch user role
+      const user = await User.findByPk(decoded.userId, { attributes: ['role'] });
+
       res.json({ 
         message: 'Login exitoso',
-        userId: decoded.userId
+        userId: decoded.userId,
+        role: user ? user.role : 'user'
       });
     } catch (err) {
       res.status(401).json({ error: err.message });
